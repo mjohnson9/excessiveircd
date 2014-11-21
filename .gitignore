@@ -1,2 +1,5 @@
 # cover.out, cpu.out, and mem.out are profiles created during testing
 *.out
+
+# Configuration files
+*.gob

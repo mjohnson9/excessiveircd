@@ -14,7 +14,7 @@ import (
 	"path/filepath"
 )
 
-var configDir = flag.String("config.directory", "./config", "Directory to use for configuration values")
+var configDir = flag.String("config.directory", "./data", "Directory to use for configuration values")
 
 // ErrDoesNotExist is an error that's returned when Get is called on a key that
 // doesn't exist.
