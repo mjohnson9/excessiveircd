@@ -1,4 +1,0 @@
-dependencies:
-    post:
-        - go get -u -v github.com/inconshreveable/gonative
-        - gonative -target="${CIRCLE_ARTIFACTS}"
