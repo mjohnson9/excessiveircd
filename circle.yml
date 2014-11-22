@@ -6,6 +6,6 @@ dependencies:
 
 test:
     override:
-        - go test -v -covermode=atomic -coverprofile=profile.cov
+        - go test -v -covermode=atomic -coverprofile=profile.cov ./...
     post:
         - goveralls -coverprofile=profile.cov -service=circleci -repotoken $COVERALLS_TOKEN
