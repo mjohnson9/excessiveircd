@@ -1,7 +1,7 @@
 dependencies:
     post:
-		- go get -v -u golang.org/x/tools/cmd/cover
-		- go get -v -u github.com/mattn/goveralls
+        - go get -v -u golang.org/x/tools/cmd/cover
+        - go get -v -u github.com/mattn/goveralls
         - go build -v -o "${CIRCLE_ARTIFACTS}/excessiveircd"
 
 test:
