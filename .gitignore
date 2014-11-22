@@ -3,3 +3,6 @@
 
 # Configuration files
 *.gob
+
+# Compiled executable
+*.exe
