@@ -1,3 +1,4 @@
 dependencies:
     post:
-        - go build -v -o "${CIRCLE_ARTIFACTS}/excessiveircd"
+		- go get -u -v github.com/inconshreveable/gonative
+        - gonative -update -o "${CIRCLE_ARTIFACTS}"
