@@ -45,7 +45,7 @@ func Set(key string, value interface{}) error {
 	}
 
 	dir := filepath.Dir(configFile)
-	if err := os.MkdirAll(dir, 0666); err != nil {
+	if err := os.MkdirAll(dir, 0777); err != nil {
 		return err
 	}
 
