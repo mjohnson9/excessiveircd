@@ -1,11 +1,3 @@
 dependencies:
     post:
-        - go get -v -u golang.org/x/tools/cmd/cover
-        - go get -v -u github.com/mattn/goveralls
         - go build -v -o "${CIRCLE_ARTIFACTS}/excessiveircd"
-
-test:
-    override:
-        - go test -v -covermode=atomic -coverprofile=profile.cov ./...
-    post:
-        - goveralls -coverprofile=profile.cov -service=circleci -repotoken $COVERALLS_TOKEN
