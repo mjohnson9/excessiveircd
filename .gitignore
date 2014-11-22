@@ -6,3 +6,6 @@
 
 # Compiled executable
 *.exe
+
+# fresh temporary directory
+tmp
