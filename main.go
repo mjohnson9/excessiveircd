@@ -5,6 +5,14 @@
 
 package main
 
+import (
+	"flag"
+
+	"github.com/nightexcessive/excessiveircd/server"
+)
+
 func main() {
-	panic("not yet implemented")
+	flag.Parse()
+
+	server.Start()
 }
