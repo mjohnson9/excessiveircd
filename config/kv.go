@@ -38,6 +38,9 @@ func getConfigFileName(key string) (string, error) {
 	return configFile, nil
 }
 
+// Set sets key to value. It uses encoding/gob to achieve this. Keys may contain
+// / to specify directory. Note that this blocks until the value is successfuly
+// written to disk or fails.
 func Set(key string, value interface{}) error {
 	configFile, err := getConfigFileName(key)
 	if err != nil {
@@ -69,6 +72,9 @@ func Set(key string, value interface{}) error {
 	return nil
 }
 
+// Get gets a previously set key and puts it into val. It uses encoding/gob to
+// achieve this, so val must be a pointer to the value.
+// If key doesn't exist, ErrDoesNotExist is returned.
 func Get(key string, val interface{}) error {
 	configFile, err := getConfigFileName(key)
 	if err != nil {
