@@ -170,18 +170,22 @@ func (c *Client) handleLine(line string) {
 }
 
 func (c *Client) handleMessage(m *irc.Message) {
-	lowerCmd := strings.ToUpper(m.Command)
-	commandEntry, found := commands[lowerCmd]
+	// Always make the command uppercase. It's canonical and our constants are
+	// also uppercase.
+	m.Command = strings.ToUpper(m.Command)
+	commandEntry, found := commands[m.Command]
 	if !found {
 		c.numeric(irc.ERR_UNKNOWNCOMMAND, m.Command, "Unknown command")
 		return
 	}
 
-	numParams := len(m.Params)
 	if len(m.Trailing) > 0 {
-		numParams++
+		// I don't like how this library handles trailing params, so I'm going
+		// to modify it slightly.
+		m.Params = append(m.Params, m.Trailing)
+		m.Trailing = ""
 	}
-	if numParams < commandEntry.MinimumParams {
+	if len(m.Params) < commandEntry.MinimumParams {
 		c.numeric(irc.ERR_NEEDMOREPARAMS, m.Command, "Not enough parameters")
 		return
 	}
@@ -214,6 +218,12 @@ func (c *Client) writeString(line string) (int, error) {
 }
 
 func (c *Client) writeMessage(m *irc.Message) (int, error) {
+	if len(m.Trailing) == 0 && len(m.Params) > 0 {
+		// We handle trailing parameters different from this IRC library, so we
+		// convert it back to the library's behavior here.
+		m.Trailing = m.Params[len(m.Params)-1]
+		m.Params = m.Params[:len(m.Params)-1]
+	}
 	return io.WriteString(c.conn, m.String()+"\r\n")
 }
 

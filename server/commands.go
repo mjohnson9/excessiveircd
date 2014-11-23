@@ -1,8 +1,6 @@
 package server
 
 import (
-	"strings"
-
 	"github.com/nightexcessive/excessiveircd/protocol"
 	"github.com/sorcix/irc"
 )
@@ -28,45 +26,44 @@ type Command struct {
 }
 
 var commands = map[string]*Command{
-	irc.PASS: {cmdRegistration, 1, false, true},
+	//irc.PASS: {cmdRegistration, 1, false, true},
 	irc.NICK: {cmdRegistration, 1, true, true},
 	irc.USER: {cmdRegistration, 4, false, true},
 }
 
+// cmdChangeNick is called when an already registered user uses the NICK command.
+func cmdChangeNick(c *Client, m *irc.Message, nick string) *CommandError {
+	reply := make(chan bool)
+	c.Server.Events <- &SReregisterClient{nick, c, reply}
+	if !<-reply {
+		return &CommandError{irc.ERR_NICKNAMEINUSE, []string{nick, "Nickname is already in use"}}
+	}
+	c.writeMessage(&irc.Message{
+		Prefix:   c.Info.Prefix,
+		Command:  "NICK",
+		Params:   nil,
+		Trailing: nick,
+	})
+	c.Info.Name = nick
+	return nil
+}
+
 func cmdRegistration(c *Client, m *irc.Message) *CommandError {
-	switch strings.ToLower(m.Command) {
-	case "nick":
+	switch m.Command {
+	case irc.NICK:
 		nick := m.Params[0]
-		if len(nick) <= 0 {
-			nick = m.Trailing
-		}
 
 		if !protocol.IsValid(nick, protocol.Nickname) {
 			return &CommandError{irc.ERR_ERRONEUSNICKNAME, []string{nick, "Erroneous nickname"}}
 		}
 
 		if c.Registered {
-			reply := make(chan bool)
-			c.Server.Events <- &SReregisterClient{nick, c, reply}
-			if !<-reply {
-				return &CommandError{irc.ERR_NICKNAMEINUSE, []string{nick, "Nickname is already in use"}}
-			}
-			c.writeMessage(&irc.Message{
-				Prefix:   c.Info.Prefix,
-				Command:  "NICK",
-				Params:   nil,
-				Trailing: nick,
-			})
-			c.Info.Name = nick
-			return nil
+			return cmdChangeNick(c, m, nick)
 		}
 
 		c.Info.Name = nick
-	case "user":
+	case irc.USER:
 		user := m.Params[0]
-		if len(user) <= 0 {
-			user = m.Trailing
-		}
 
 		// TODO(nightexcessive): Should we be using a different validation set
 		// here? The RFC doesn't say.
@@ -81,19 +78,18 @@ func cmdRegistration(c *Client, m *irc.Message) *CommandError {
 		return nil
 	}
 
-	if !c.Registered {
-		if c.Info.Name != "*" && c.Info.User != "*" {
-			reply := make(chan bool)
-			c.Server.Events <- &SRegisterClient{c, reply}
+	// Registered connections should never reach this section.
 
-			if !<-reply {
-				return &CommandError{irc.ERR_NICKNAMEINUSE, []string{c.Info.Name, "Nickname is already in use"}}
-			}
+	if c.Info.Name != "*" && c.Info.User != "*" {
+		reply := make(chan bool)
+		c.Server.Events <- &SRegisterClient{c, reply}
 
-			c.Registered = true
-			c.numeric(irc.RPL_WELCOME, "Welcome to the Internet Relay Network "+c.Info.String())
+		if !<-reply {
+			return &CommandError{irc.ERR_NICKNAMEINUSE, []string{c.Info.Name, "Nickname is already in use"}}
 		}
-		return nil
+
+		c.Registered = true
+		c.numeric(irc.RPL_WELCOME, "Welcome to the Internet Relay Network "+c.Info.String())
 	}
 
 	return nil
