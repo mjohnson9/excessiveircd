@@ -6,6 +6,8 @@
 package server
 
 import (
+	"time"
+
 	"github.com/nightexcessive/excessiveircd/protocol"
 	"github.com/sorcix/irc"
 )
@@ -50,6 +52,7 @@ func cmdChangeNick(c *Client, m *irc.Message, nick string) *CommandError {
 		Trailing: nick,
 	})
 	c.Info.Name = nick
+	c.Info.ChangeTime = time.Now()
 	return nil
 }
 
@@ -92,6 +95,9 @@ func cmdRegistration(c *Client, m *irc.Message) *CommandError {
 		}
 
 		c.Registered = true
+		c.ConnectTime = time.Now()
+		c.Info.ChangeTime = time.Now()
+
 		c.numeric(irc.RPL_WELCOME, "Welcome to the Internet Relay Network "+c.Info.String())
 	}
 

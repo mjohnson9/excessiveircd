@@ -14,6 +14,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/sorcix/irc"
 
@@ -28,8 +29,17 @@ type Client struct {
 
 	Info struct {
 		*irc.Prefix
+
+		// Client's real name/GECOS
 		Real string
+
+		// The time at which the client began owning this nickname. This is
+		// primarily used for collision resolution.
+		ChangeTime time.Time
 	}
+
+	// The time at which this client finished registration.
+	ConnectTime time.Time
 
 	Registered bool
 	Closed     bool
@@ -55,14 +65,16 @@ func NewClient(conn net.Conn, server *Server) *Client {
 
 		Info: struct {
 			*irc.Prefix
-			Real string
+			Real       string
+			ChangeTime time.Time
 		}{
-			&irc.Prefix{
+			Prefix: &irc.Prefix{
 				Name: "*",
 				User: "*",
 				Host: "*",
 			},
-			"*",
+			Real:       "*",
+			ChangeTime: time.Now(),
 		},
 
 		Events: make(chan interface{}),
