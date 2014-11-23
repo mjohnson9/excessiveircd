@@ -132,6 +132,8 @@ func (c *Client) lookupHostname() {
 }
 
 func (c *Client) readLoop() {
+	c.Logger.Print("Started read loop")
+	defer c.Logger.Print("Ended read loop")
 	for {
 		line, err := c.buf.ReadString('\n')
 		if netErr, ok := err.(net.Error); ok {
@@ -161,6 +163,8 @@ func (c *Client) readLoop() {
 }
 
 func (c *Client) eventLoop() {
+	c.Logger.Print("Started event loop")
+	defer c.Logger.Print("Ended event loop")
 	for event := range c.Events {
 		c.Logger.Printf("Event: %T", event)
 		switch ev := event.(type) {
