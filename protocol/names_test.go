@@ -7,11 +7,11 @@ import (
 )
 
 func TestIsValid_AlwaysTrue(t *testing.T) {
-	alwaysTrue := func(r rune) bool {
+	alwaysTrue := func(i int, r rune) bool {
 		return true
 	}
 
-	if !protocol.IsValidName("abcd", alwaysTrue) {
+	if !protocol.IsValid("abcd", alwaysTrue) {
 		t.Error("false value given, expected true")
 	}
 }
