@@ -40,7 +40,7 @@ func cmdChangeNick(c *Client, m *irc.Message, nick string) *CommandError {
 	}
 	c.writeMessage(&irc.Message{
 		Prefix:   c.Info.Prefix,
-		Command:  "NICK",
+		Command:  irc.NICK,
 		Params:   nil,
 		Trailing: nick,
 	})
