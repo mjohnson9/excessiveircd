@@ -121,7 +121,7 @@ func (c *Client) lookupHostname() {
 		for _, resolvedIP := range ips {
 			if c.IP.Equal(resolvedIP) {
 				c.Info.Host = hostname
-				c.serverNotice(c.Server, "*** Found your hostname: "+c.Info.Host)
+				c.serverNotice(c.Server, "*** Found your hostname")
 				return
 			}
 		}
