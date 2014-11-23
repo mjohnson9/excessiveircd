@@ -12,6 +12,21 @@ type SRegisterClient struct {
 	Reply  chan bool
 }
 
+// SReregisterClient is used to inform the server that a client has changed
+// their nickname and needs to be reregistered.
+type SReregisterClient struct {
+	NewNick string
+	Client  *Client
+	Reply   chan bool
+}
+
+// SDeregisterClient is used to inform the server that a client has disconnected
+// and registration information needs to be discarded.
+type SDeregisterClient struct {
+	Client *Client
+	Reply  chan struct{}
+}
+
 // Client events
 
 // CInitialize is used to inform the Client that it needs to initialize. These

@@ -3,6 +3,7 @@ package server
 import (
 	"strings"
 
+	"github.com/nightexcessive/excessiveircd/protocol"
 	"github.com/sorcix/irc"
 )
 
@@ -35,16 +36,64 @@ var commands = map[string]*Command{
 func cmdRegistration(c *Client, m *irc.Message) *CommandError {
 	switch strings.ToLower(m.Command) {
 	case "nick":
-		c.Info.Name = m.Params[0]
+		nick := m.Params[0]
+		if len(nick) <= 0 {
+			nick = m.Trailing
+		}
+
+		if !protocol.IsValid(nick, protocol.Nickname) {
+			return &CommandError{irc.ERR_ERRONEUSNICKNAME, []string{nick, "Erroneous nickname"}}
+		}
+
+		if c.Registered {
+			reply := make(chan bool)
+			c.Server.Events <- &SReregisterClient{nick, c, reply}
+			if !<-reply {
+				return &CommandError{irc.ERR_NICKNAMEINUSE, []string{nick, "Nickname is already in use"}}
+			}
+			c.writeMessage(&irc.Message{
+				Prefix:   c.Info.Prefix,
+				Command:  "NICK",
+				Params:   nil,
+				Trailing: nick,
+			})
+			c.Info.Name = nick
+			return nil
+		}
+
+		c.Info.Name = nick
 	case "user":
-		c.Info.User = "~" + m.Params[0]
+		user := m.Params[0]
+		if len(user) <= 0 {
+			user = m.Trailing
+		}
+
+		// TODO(nightexcessive): Should we be using a different validation set
+		// here? The RFC doesn't say.
+		if !protocol.IsValid(user, protocol.Nickname) {
+			c.error("Invalid user name given")
+			return nil
+		}
+
+		c.Info.User = "~" + user
 	default:
 		c.Logger.Printf("Unexpected registration command: %q", m.Command)
 		return nil
 	}
 
-	if !c.Registered && c.Info.Name != "*" && c.Info.User != "*" {
+	if !c.Registered {
+		if c.Info.Name != "*" && c.Info.User != "*" {
+			reply := make(chan bool)
+			c.Server.Events <- &SRegisterClient{c, reply}
 
+			if !<-reply {
+				return &CommandError{irc.ERR_NICKNAMEINUSE, []string{c.Info.Name, "Nickname is already in use"}}
+			}
+
+			c.Registered = true
+			c.numeric(irc.RPL_WELCOME, "Welcome to the Internet Relay Network "+c.Info.String())
+		}
+		return nil
 	}
 
 	return nil

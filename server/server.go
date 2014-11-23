@@ -62,6 +62,17 @@ func (s *Server) eventLoop() {
 			}
 			s.Clients[ev.Client.Info.Name] = ev.Client
 			ev.Reply <- true
+		case *SReregisterClient:
+			if _, ok := s.Clients[ev.NewNick]; ok {
+				ev.Reply <- false
+				continue
+			}
+			delete(s.Clients, ev.Client.Info.Name)
+			s.Clients[ev.NewNick] = ev.Client
+			ev.Reply <- true
+		case *SDeregisterClient:
+			delete(s.Clients, ev.Client.Info.Name)
+			ev.Reply <- struct{}{}
 		default:
 			s.Logger.Printf("Unexpected event of type %T: %#v", ev, ev)
 		}
@@ -98,7 +109,7 @@ func (s *Server) Start() error {
 		return err
 	}
 
-	s.Logger = log.New(os.Stderr, fmt.Sprintf("Server(%s) ", s.ID), log.LstdFlags)
+	s.Logger = log.New(os.Stderr, fmt.Sprintf("Server(%s) ", s.ID), 0)
 
 	s.startListeners(listeners)
 

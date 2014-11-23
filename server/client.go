@@ -46,7 +46,7 @@ func NewClient(conn net.Conn, server *Server) *Client {
 	client := &Client{
 		ID:     id,
 		Server: server,
-		Logger: log.New(os.Stderr, fmt.Sprintf("Client(%s) ", id), log.LstdFlags),
+		Logger: log.New(os.Stderr, fmt.Sprintf("Client(%s) ", id), 0),
 
 		Info: struct {
 			*irc.Prefix
@@ -117,7 +117,14 @@ func (c *Client) lookupHostname() {
 func (c *Client) readLoop() {
 	for {
 		line, err := c.buf.ReadString('\n')
-		if err == io.EOF || (err != nil && strings.HasSuffix(err.Error(), "use of closed network connection")) {
+		if netErr, ok := err.(net.Error); ok {
+			if !netErr.Temporary() {
+				c.Logger.Printf("Read error (net.Error, non-temporary): %s", err)
+				c.Events <- &CClose{"Read error: " + err.Error()}
+				return
+			}
+			c.Logger.Printf("Read error (net.Error, temporary): %s", err)
+		} else if err == io.EOF || (err != nil && strings.HasSuffix(err.Error(), "use of closed network connection")) {
 			c.Events <- &CClose{"Connection reset by peer"}
 			return
 		} else if err != nil {
@@ -206,10 +213,22 @@ func (c *Client) writeString(line string) (int, error) {
 	return io.WriteString(c.conn, line+"\r\n")
 }
 
+func (c *Client) writeMessage(m *irc.Message) (int, error) {
+	return io.WriteString(c.conn, m.String()+"\r\n")
+}
+
 func (c *Client) close(reason string) {
 	close(c.Events)
-	c.writeString("ERROR :Closing link " + c.Info.Name + ": " + reason + "\r\n")
+	c.error("Closing link " + c.Info.Name + ": " + reason)
 	c.conn.Close()
+
+	reply := make(chan struct{})
+	c.Server.Events <- &SDeregisterClient{c, reply}
+	<-reply
+}
+
+func (c *Client) error(text string) {
+	c.writeString("ERROR :" + text)
 }
 
 func (c *Client) serverNotice(s *Server, text string) {
