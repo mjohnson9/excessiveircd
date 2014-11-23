@@ -55,10 +55,13 @@ func Digit(i int, r rune) bool {
 	return r >= '0' && r <= '9' // 0-9
 }
 
+// MaxMaximumNickLen specifies the maximum length that a nickname may be.
+const MaximumNickLen = 15
+
 // Nickname checks if r at index i is a valid nickname character, as according
 // to RFC 2812.
 func Nickname(i int, r rune) bool {
-	if i >= 9 {
+	if i >= MaximumNickLen {
 		// Nicknames have a maximum length of 9 characters. The runes are
 		// 0-indexed.
 		return false
