@@ -65,9 +65,7 @@ func cmdRegistration(c *Client, m *irc.Message) *CommandError {
 	case irc.USER:
 		user := m.Params[0]
 
-		// TODO(nightexcessive): Should we be using a different validation set
-		// here? The RFC doesn't say.
-		if !protocol.IsValid(user, protocol.Nickname) {
+		if !protocol.IsValid(user, protocol.Username) {
 			c.error("Invalid user name given")
 			return nil
 		}

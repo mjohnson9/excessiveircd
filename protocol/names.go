@@ -73,6 +73,18 @@ func Nickname(i int, r rune) bool {
 	return true
 }
 
+// Username checks if r at index i is a valid nickname character, as according
+// to RFC 2812.
+func Username(i int, r rune) bool {
+	// TODO(nightexcessive): Is this correct? It seems to allow overly broad characters such as \t.
+	if r == 0x00 || r == '\r' || r == '\n' || r == ' ' || r == '@' || r > 0xFF || // These are characters barred by RFC 2812.
+		r == '~' || r == '*' { // These are characters barred by our special uses.
+		return false
+	}
+
+	return true
+}
+
 // IsValid checks s against checkFunc and returns true if all runes are given
 // success values by checkFunc.
 // It short circuits at the first false value.
