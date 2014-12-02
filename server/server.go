@@ -153,13 +153,27 @@ func (s *Server) listen(listenSpec *ListenPort, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	listenAddr := net.JoinHostPort(listenSpec.IP.String(), strconv.FormatInt(int64(listenSpec.Port), 10))
-	listener, err := net.Listen("tcp", listenAddr)
-	if err != nil {
-		s.Logger.Printf("Failed to listen on %s: %s", listenAddr, err)
-		return
+	var listener net.Listener
+
+	if listenSpec.TLS != nil {
+		tlsListener, err := tls.Listen("tcp", listenAddr, listenSpec.TLS)
+		if err != nil {
+			s.Logger.Printf("Failed to listen for SSL connections on %s: %s", listenAddr, err)
+			return
+		}
+		listener = tlsListener
+		s.Logger.Printf("Listening for SSL connections on %s...", listenAddr)
+	} else {
+		clearListener, err := net.Listen("tcp", listenAddr)
+		if err != nil {
+			s.Logger.Printf("Failed to listen on %s: %s", listenAddr, err)
+			return
+		}
+		listener = clearListener
+		s.Logger.Printf("Listening on %s...", listenAddr)
 	}
+
 	defer listener.Close()
-	s.Logger.Printf("Listening on %s...", listenAddr)
 
 	for {
 		c, err := listener.Accept()
