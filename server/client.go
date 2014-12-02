@@ -7,6 +7,7 @@ package server
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -131,11 +132,78 @@ func (c *Client) lookupHostname() {
 	c.serverNotice(c.Server, "*** Could not find your hostname.")
 }
 
+var errMaximumLineLengthExceeded = errors.New("maximum line length exceeded")
+
+func (c *Client) readLine() (s string, err error) {
+	const (
+		// Maximum IRC line length is 512, including the \r\n. Since
+		// ReadLine doesn't return the \r\n, we assume a maximum length of
+		// 510 and silently discard the rest.
+		softLengthLimit = 510
+
+		// We make a hard limit of 32KB per line and return an error after that.
+		hardLengthLimit = 32 * 1024
+	)
+
+	var (
+		n        int
+		b        []byte
+		isPrefix bool
+	)
+
+	emptyBuf := false
+
+	for {
+		b, isPrefix, err = c.buf.ReadLine()
+		n += len(b)
+		if err != nil {
+			if isPrefix {
+				emptyBuf = true
+			}
+			break
+		}
+
+		if bLen, sLen := len(b), len(s); bLen+sLen > softLengthLimit {
+			s += string(b[:510-sLen])
+			if isPrefix {
+				emptyBuf = true
+			}
+			break
+		} else {
+			s += string(b)
+		}
+
+		if !isPrefix {
+			break
+		}
+	}
+
+	if emptyBuf {
+		for {
+			// Ignore the rest of this line.
+			b, isPrefix, err = c.buf.ReadLine()
+			n += len(b)
+			if err != nil {
+				break
+			}
+			if !isPrefix {
+				break
+			}
+			if n > hardLengthLimit {
+				err = errMaximumLineLengthExceeded
+				return
+			}
+		}
+	}
+
+	return
+}
+
 func (c *Client) readLoop() {
 	c.Logger.Print("Started read loop")
 	defer c.Logger.Print("Ended read loop")
 	for {
-		line, err := c.buf.ReadString('\n')
+		line, err := c.readLine()
 		if netErr, ok := err.(net.Error); ok {
 			if !netErr.Temporary() {
 				c.Logger.Printf("Read error (net.Error, non-temporary): %s", err)
@@ -150,12 +218,6 @@ func (c *Client) readLoop() {
 			c.Logger.Printf("Read error: %s", err)
 			c.Events <- &CClose{"Read error: " + err.Error()}
 			return
-		}
-		// Remove LF
-		line = line[:len(line)-1]
-		// Remove CR
-		if len(line) >= 1 && line[len(line)-1] == '\r' {
-			line = line[:len(line)-1]
 		}
 
 		c.handleLine(line)
