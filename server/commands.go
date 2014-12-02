@@ -41,7 +41,7 @@ var commands = map[string]*Command{
 // cmdChangeNick is called when an already registered user uses the NICK command.
 func cmdChangeNick(c *Client, m *irc.Message, nick string) *CommandError {
 	reply := make(chan bool)
-	c.Server.Events <- &SReregisterClient{nick, c, reply}
+	c.Server.Events <- &SChangeNick{nick, c, reply}
 	if !<-reply {
 		return &CommandError{irc.ERR_NICKNAMEINUSE, []string{nick, "Nickname is already in use"}}
 	}

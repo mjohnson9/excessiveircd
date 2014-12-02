@@ -17,9 +17,9 @@ type SRegisterClient struct {
 	Reply  chan bool
 }
 
-// SReregisterClient is used to inform the server that a client has changed
+// SChangeNick is used to inform the server that a client has changed
 // their nickname and needs to be reregistered.
-type SReregisterClient struct {
+type SChangeNick struct {
 	NewNick string
 	Client  *Client
 	Reply   chan bool

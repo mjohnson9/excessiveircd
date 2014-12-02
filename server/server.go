@@ -67,7 +67,7 @@ func (s *Server) eventLoop() {
 			}
 			s.Clients[ev.Client.Info.Name] = ev.Client
 			ev.Reply <- true
-		case *SReregisterClient:
+		case *SChangeNick:
 			if _, ok := s.Clients[ev.NewNick]; ok {
 				ev.Reply <- false
 				continue
