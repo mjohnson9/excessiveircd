@@ -15,9 +15,8 @@ import (
 	"strconv"
 	"sync"
 
-	"code.google.com/p/go-uuid/uuid"
-
 	"github.com/nightexcessive/excessiveircd/config"
+	"github.com/pborman/uuid"
 )
 
 // ListenPort represents a port to be listened on.
