@@ -18,8 +18,7 @@ import (
 	"time"
 
 	"github.com/sorcix/irc"
-
-	"code.google.com/p/go-uuid/uuid"
+	"github.com/pborman/uuid"
 )
 
 // Client represents a client connection.
